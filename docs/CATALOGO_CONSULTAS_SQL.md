@@ -14,7 +14,7 @@ Los scripts independientes están en la carpeta [`sql/`](../sql/). El archivo `R
 
 > **Modelo y alcance:** el esquema recoge las 12 tablas utilizadas en el proyecto académico. Las reseñas se relacionan con una visita o una reserva; los servicios se asignan a habitaciones mediante `room_facility`. La columna `room_type` no existe en el esquema, por lo que las consultas por tipo se expresan a nivel de propiedad.
 
-## Consultas obligatorias (ejercicios 0–73)
+## Consultas principales (ejercicios 0–73)
 
 ## CREATE
 
