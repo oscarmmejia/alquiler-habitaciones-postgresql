@@ -1,0 +1,111 @@
+-- Esquema de tablas en alquiler_habitaciones (base vacía)
+CREATE TABLE owner (
+ owner_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ name VARCHAR(100) NOT NULL,
+ surname VARCHAR(100) NOT NULL,
+ email VARCHAR(150) UNIQUE NOT NULL,
+ phone VARCHAR(20),
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE country (
+ country_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE city (
+ city_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ name VARCHAR(100) NOT NULL,
+ country_id INTEGER NOT NULL REFERENCES country(country_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE client (
+ client_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ city_id INTEGER NOT NULL REFERENCES city(city_id) ON DELETE RESTRICT,
+ name VARCHAR(100) NOT NULL,
+ surname VARCHAR(100) NOT NULL,
+ email VARCHAR(150) UNIQUE NOT NULL,
+ phone VARCHAR(20),
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE property (
+ property_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ owner_id INTEGER NOT NULL REFERENCES owner(owner_id) ON DELETE RESTRICT,
+ city_id INTEGER NOT NULL REFERENCES city(city_id) ON DELETE RESTRICT,
+ title VARCHAR(150) NOT NULL,
+ description TEXT,
+ status VARCHAR(30) NOT NULL,
+ property_type VARCHAR(50) NOT NULL,
+ price NUMERIC(12,2) NOT NULL CHECK (price >= 0),
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE room (
+ room_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ property_id INTEGER NOT NULL REFERENCES property(property_id) ON DELETE RESTRICT,
+ name VARCHAR(150) NOT NULL,
+ description TEXT,
+ status VARCHAR(30) NOT NULL,
+ price NUMERIC(12,2) NOT NULL CHECK (price >= 0),
+ capacity INTEGER NOT NULL CHECK (capacity > 0),
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE facility (
+ facility_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ name VARCHAR(100) UNIQUE NOT NULL,
+ category VARCHAR(60) NOT NULL
+);
+
+CREATE TABLE room_facility (
+ room_id INTEGER NOT NULL REFERENCES room(room_id) ON DELETE CASCADE,
+ facility_id INTEGER NOT NULL REFERENCES facility(facility_id) ON DELETE CASCADE,
+ verified BOOLEAN DEFAULT FALSE,
+ costo_adicional NUMERIC(8,2) NOT NULL DEFAULT 0 CHECK (costo_adicional >= 0),
+ disponibilidad BOOLEAN NOT NULL DEFAULT TRUE,
+ PRIMARY KEY(room_id, facility_id)
+);
+
+CREATE TABLE reservation (
+ reservation_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ client_id INTEGER NOT NULL REFERENCES client(client_id) ON DELETE RESTRICT,
+ property_id INTEGER NOT NULL REFERENCES property(property_id) ON DELETE RESTRICT,
+ room_id INTEGER REFERENCES room(room_id) ON DELETE RESTRICT,
+ status VARCHAR(30) NOT NULL CHECK (status IN ('pendiente','confirmada','cancelada','completada')),
+ start_date DATE NOT NULL,
+ end_date DATE NOT NULL,
+ expires_at TIMESTAMP,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ CHECK (end_date > start_date)
+);
+
+CREATE TABLE payment (
+ payment_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ reservation_id INTEGER NOT NULL REFERENCES reservation(reservation_id) ON DELETE RESTRICT,
+ amount NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+ payment_method VARCHAR(50) NOT NULL,
+ status VARCHAR(30) NOT NULL CHECK (status IN ('pendiente','pagado','reembolsado')),
+ paid_at TIMESTAMP
+);
+
+CREATE TABLE visit (
+ visit_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ client_id INTEGER NOT NULL REFERENCES client(client_id) ON DELETE RESTRICT,
+ property_id INTEGER NOT NULL REFERENCES property(property_id) ON DELETE RESTRICT,
+ date TIMESTAMP NOT NULL,
+ status VARCHAR(30) NOT NULL,
+ confirmed_by_owner BOOLEAN NOT NULL DEFAULT FALSE,
+ confirmed_by_client BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE review (
+ review_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ reservation_id INTEGER REFERENCES reservation(reservation_id) ON DELETE RESTRICT,
+ visit_id INTEGER REFERENCES visit(visit_id) ON DELETE RESTRICT,
+ rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+ comment TEXT,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ CHECK ((reservation_id IS NOT NULL AND visit_id IS NULL)
+     OR (reservation_id IS NULL AND visit_id IS NOT NULL))
+);
